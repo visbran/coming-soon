@@ -1,108 +1,179 @@
 "use client";
 
 import * as React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import data from "../../../data/data";
 
-type SubmissionState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "success"; message: string }
-  | { status: "error"; message: string };
+const formSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "L'adresse e-mail est requise." })
+    .email({ message: "Veuillez saisir une adresse e-mail valide." }),
+  consent: z
+    .boolean()
+    .refine((value) => value === true, {
+      message: "Vous devez accepter la politique RGPD.",
+    }),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+type SubmissionStatus = "idle" | "loading" | "success" | "error";
 
 function SubscribeForm() {
-  const { newsletterheading, hideSubscribeForm } = data;
-  const [email, setEmail] = React.useState("");
-  const [state, setState] = React.useState<SubmissionState>({ status: "idle" });
+  const {
+    newsletterheading,
+    hideSubscribeForm,
+  } = data;
+
+  const [status, setStatus] = React.useState<SubmissionStatus>("idle");
+  const [feedbackMessage, setFeedbackMessage] = React.useState<string | null>(null);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      consent: false,
+    },
+  });
+
+  const onSubmit = async (values: FormValues) => {
+    setStatus("loading");
+    setFeedbackMessage(null);
+
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "Impossible d'enregistrer votre inscription."
+        );
+      }
+
+      form.reset({ email: "", consent: false });
+      setStatus("success");
+      setFeedbackMessage(
+        payload.message ??
+          "Merci ! Vérifiez votre boîte mail pour confirmer votre inscription."
+      );
+    } catch (error) {
+      setStatus("error");
+      setFeedbackMessage(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue. Veuillez réessayer."
+      );
+    }
+  };
 
   if (hideSubscribeForm) {
     return null;
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!email) {
-      setState({ status: "error", message: "Merci de saisir une adresse e-mail." });
-      return;
-    }
-
-    setState({ status: "loading" });
-
-    try {
-      const response = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const result: { error?: string } | undefined = await response.json().catch(() => undefined);
-
-      if (!response.ok) {
-        throw new Error(result?.error ?? "Une erreur est survenue.");
-      }
-
-      setEmail("");
-      setState({
-        status: "success",
-        message: "Merci ! Vérifiez votre boîte mail pour notre message.",
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Impossible d'envoyer votre inscription.";
-      setState({ status: "error", message });
-    }
-  };
-
   return (
-    <section className="mt-10 w-80 p-3 text-center lg:m-7">
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-light leading-6 text-slate-800 dark:text-slate-100"
-          >
-            {newsletterheading}
-          </label>
-          <div className="mt-2 flex-col flex lg:flex md:flex-row">
-            <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Adresse e-mail"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              className="block w-full rounded-none border-0 p-2 pl-[10px] text-gray-900 placeholder:text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            />
-            <button
-              type="submit"
-              className="ml-0 mt-2 border-2 border-slate-800 bg-slate-900 p-2 text-white hover:bg-slate-950 disabled:cursor-not-allowed disabled:opacity-75 dark:border-slate-100 dark:text-white md:mt-0"
-              disabled={state.status === "loading"}
-            >
-              {state.status === "loading" ? "Envoi..." : "S'inscrire"}
-            </button>
+    <section className="mt-10 w-full max-w-md rounded-xl border border-slate-200 bg-white/70 p-6 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+      <Form {...form}>
+        <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="space-y-2 text-center">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {newsletterheading}
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Recevez une notification dès que le site est en ligne.
+            </p>
           </div>
-        </div>
-        {state.status === "error" && (
-          <p
-            className="text-sm text-red-500"
-            role="status"
-            aria-live="polite"
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Adresse e-mail</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="prenom.nom@email.com"
+                    autoComplete="email"
+                    inputMode="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="consent"
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <div className="flex items-start gap-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(checked === true)}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 text-sm">
+                    <FormLabel className="text-left font-medium text-slate-800 dark:text-slate-100">
+                      J&apos;accepte de recevoir les communications de LMF Solutions.
+                    </FormLabel>
+                    <FormDescription>
+                      Vos données sont utilisées uniquement pour vous informer du
+                      lancement. Vous pouvez vous désinscrire à tout moment.
+                    </FormDescription>
+                  </div>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={status === "loading"}
           >
-            {state.message}
-          </p>
-        )}
-        {state.status === "success" && (
-          <p
-            className="text-sm text-green-600"
-            role="status"
-            aria-live="polite"
-          >
-            {state.message}
-          </p>
-        )}
-      </form>
+            {status === "loading" ? "Envoi en cours…" : "S'inscrire"}
+          </Button>
+
+          {feedbackMessage && (
+            <p
+              className={`text-sm ${
+                status === "success" ? "text-emerald-600" : "text-red-500"
+              }`}
+              role="status"
+            >
+              {feedbackMessage}
+            </p>
+          )}
+        </form>
+      </Form>
     </section>
   );
 }

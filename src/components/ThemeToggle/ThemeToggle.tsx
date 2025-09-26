@@ -11,6 +11,17 @@ const iconClasses = "h-5 w-5";
 export default function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const { autoThemeEnabled, disableAutoTheme, enableAutoTheme } = useAutoTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="h-10 w-10" aria-hidden />
+    );
+  }
 
   const handleToggle = () => {
     disableAutoTheme();

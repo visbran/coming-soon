@@ -34,6 +34,19 @@ const isDuplicateContactError = (error: ResendError) => {
   return message.toLowerCase().includes("contact already exists");
 };
 
+const isContactWriteRestrictedError = (error: ResendError) => {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const message = ("message" in error ? String(error.message ?? "") : "").toLowerCase();
+  const statusCode = "statusCode" in error ? Number((error as { statusCode?: number }).statusCode) : undefined;
+  return (
+    message.includes("restricted to only send emails") ||
+    message.includes("api key is restricted") ||
+    statusCode === 401
+  );
+};
+
 export async function POST(request: Request) {
   const { RESEND_API_KEY, RESEND_AUDIENCE_ID, RESEND_NOTIFICATION_EMAIL } = process.env;
 
@@ -81,7 +94,11 @@ export async function POST(request: Request) {
       unsubscribed: false,
     });
 
-    if (contactResponse.error && !isDuplicateContactError(contactResponse.error)) {
+    if (
+      contactResponse.error &&
+      !isDuplicateContactError(contactResponse.error) &&
+      !isContactWriteRestrictedError(contactResponse.error)
+    ) {
       throw new Error(contactResponse.error.message ?? "Erreur lors de l'ajout du contact.");
     }
 
