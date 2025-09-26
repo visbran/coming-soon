@@ -37,8 +37,8 @@ const CountDown: React.FC<Props> = ({ endDate }) => {
         <h1 className="text-4xl font-extrabold m-2 text-sky-600 dark:text-sky-200 mb-4">{title}</h1>
         <div className="text-center font-heading m-5 text-5xl sm:text-4xl lg:text-7xl leading-[5rem] sm:leading-[7rem] lg:leading-[7rem] font-black ">
             <span className='bg-clip-text flex-row text-transparent bg-gradient-to-r from-pink-500 to-violet-500'>
-                <span>{countdown.days} Days </span> 
-                <span>{countdown.hours} Hrs </span>
+                <span>{countdown.days} Jours </span> 
+                <span>{countdown.hours} Heures </span>
                 <span>{countdown.minutes} Min </span> 
                 <span>{countdown.seconds} Sec</span>
             </span>
