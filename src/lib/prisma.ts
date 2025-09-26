@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 // Reuse the Prisma instance across hot reloads in development to avoid creating
-// too many connections to the SQLite database.
+// too many connections to the Postgres database.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

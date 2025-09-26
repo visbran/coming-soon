@@ -29,6 +29,17 @@ Start the development server: `npm run dev`
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 
+## Newsletter & Database Configuration
+
+The newsletter APIs persist subscribers with Prisma on a Postgres database. Configure the following environment variables in `.env.local` (use the values provided by Vercel Postgres):
+
+- `DATABASE_URL` – Prisma reads this connection string; point it to the pooled Postgres URL (use the value exposed as `POSTGRES_PRISMA_URL`).
+- `POSTGRES_PRISMA_URL` – keep this variable so the Vercel runtime can inject the dedicated Prisma URL.
+- `POSTGRES_URL` – optional but recommended to retain for tooling that expects the direct connection string.
+
+After updating the environment variables, run `npx prisma generate` to regenerate the Prisma client and `npx prisma db push` to sync the schema with the new database.
+
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 [http://localhost:3000/api/hello](http://localhost:3000/api/hello) is an endpoint that uses [Route Handlers](https://beta.nextjs.org/docs/routing/route-handlers). This endpoint can be edited in `app/api/hello/route.ts`.
