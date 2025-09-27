@@ -1,7 +1,7 @@
 "use client";
 
 import ThemeToggle from "@/components/ThemeToggle/ThemeToggle";
-import data from "../../../data/data";
+import data from "@data/data";
 
 function Header() {
   const { sitename, sitetagline, siteurl } = data;

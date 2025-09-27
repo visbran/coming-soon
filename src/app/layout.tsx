@@ -1,16 +1,9 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
-import { ThemeProvider } from './theme-provider'
+import "./globals.css";
+import { ThemeProvider } from "./theme-provider";
 
-
-
-import type { Metadata } from 'next'
-import data from '../../data/data'
-
-const inter = Inter({
-  weight: ["100", "200", "300", "600", "400", "700", "900"],
-  subsets: ["latin"],
-});
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import data from "@data/data";
 
 export const metadata: Metadata = {
   metadataBase: new URL(data.siteurl),
@@ -34,19 +27,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      
-      <body className={ `${inter.className} bg-gray-200	min-h-screen dark:bg-[#0d1117] `}
-      >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>          
-          <main className='main'>{children}</main>
-        </ThemeProvider>          
+      <body className="bg-gray-200 min-h-screen dark:bg-[#0d1117]">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <main className="main">{children}</main>
+        </ThemeProvider>
       </body>
     </html>
   )
